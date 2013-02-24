@@ -16,6 +16,7 @@ import appliednlp.cluster._
  * k-means with different options.
  */
 object Cluster {
+import math.{sqrt,pow}
 
   def main(args: Array[String]) {
     // Parse and get the command-line options
@@ -27,8 +28,60 @@ object Cluster {
     Logger.getRootLogger.setLevel(logLevel)
     
     // Your code starts here. You'll use and extend it during every problem.
+    // Part 1
+    /*
+    val pointObject = DirectCreator(opts.filename()).toList
+    val pointType = pointObject.map(x => x._3).toIndexedSeq
+    val kmeans = new Kmeans(points = pointType, distance = DistanceFunction(opts.distance()))
+    val out= kmeans.run(k=opts.k())
+    val centroidOut = kmeans.computeClusterMemberships(out._2)
+    val label = pointObject.map(x =>x._2).toIndexedSeq
+    val confusionMatrix = ClusterConfusionMatrix(goldClusterIds=label,numPredictedClusters=out._2.length,predictedClusterIndices=centroidOut._2)
+    //println(confusionMatrix)
 
+    // Part 2
+    val zPointObject = PointTransformer("z", pointType)
+    val zPoints = zPointObject(pointType)
+    val zkmeans = new Kmeans(points = zPoints, distance = DistanceFunction(opts.distance()))
+    val zOut= zkmeans.run(k=opts.k())
+    val zCentroidOut = zkmeans.computeClusterMemberships(zOut._2)
+    val zConfusionMatrix = ClusterConfusionMatrix(goldClusterIds=label,numPredictedClusters=zOut._2.length,predictedClusterIndices=zCentroidOut._2)
+    //println(zConfusionMatrix)
 
+    // Part 3
+    //if(opts.features()=="schools"){
+    val schoolObject = SchoolsCreator(opts.filename()).toList
+    val schoolType = schoolObject.map(x => x._3).toIndexedSeq
+    val schoolsKmeans = new Kmeans(points = schoolType, distance = DistanceFunction(opts.distance()))
+    val schoolOut = schoolsKmeans.run(k=opts.k())
+    val schoolCentroidOut = schoolsKmeans.computeClusterMemberships(schoolOut._2)
+    val schoolLabel = schoolObject.map(x =>x._2).toIndexedSeq 
+    val schoolConfusionMatrix = ClusterConfusionMatrix(goldClusterIds= schoolLabel, numPredictedClusters = schoolOut._2.length, predictedClusterIndices = schoolCentroidOut._2)
+    println(schoolConfusionMatrix)
+    ClusterReport(schoolObject.map(x => x._1).toSeq,schoolLabel,schoolCentroidOut._2)
+    //}
+
+   // Part 4
+    val countryObject = CountriesCreator(opts.filename()).toList
+    val countryType = countryObject.map(x => x._3).toIndexedSeq
+    val countryKmeans = new Kmeans(points = countryType, distance = DistanceFunction(opts.distance()))
+    val countryOut = countryKmeans.run(k=opts.k())
+    val countryCentroidOut = countryKmeans.computeClusterMemberships(countryOut._2)
+    val countryLabel = countryObject.map(x =>x._2).toIndexedSeq 
+    val countryConfusionMatrix = ClusterConfusionMatrix(goldClusterIds= countryLabel, numPredictedClusters = countryOut._2.length, predictedClusterIndices = countryCentroidOut._2)
+    println(countryConfusionMatrix)
+*/
+    // Part 5
+    val fedCreator = new FederalistCreator
+    val fedObject = fedCreator(opts.filename()).toList
+    val fedType = fedObject.map(x => x._3).toIndexedSeq
+    val fedKmeans = new Kmeans(points = fedType, distance = DistanceFunction(opts.distance()))
+    val fedOut = fedKmeans.run(k=opts.k())
+    val fedCentroidOut = fedKmeans.computeClusterMemberships(fedOut._2)
+    val fedLabel = fedObject.map(x =>x._2).toIndexedSeq 
+    val fedConfusionMatrix = ClusterConfusionMatrix(goldClusterIds= fedLabel, numPredictedClusters = fedOut._2.length, predictedClusterIndices = fedCentroidOut._2)
+    println(fedConfusionMatrix)
+    //ClusterReport(fedObject.map(x => x._1).toSeq,fedLabel,fedCentroidOut._2)
   }
 
 }
