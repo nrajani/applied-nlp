@@ -22,6 +22,17 @@ trait PointCreator extends (String => Iterator[(String,String,Point)])
 /**
  * Read data in the standard format for use with k-means.
  */
+ object PointCreator {
+
+    def apply(feature: String) = feature match {
+    case "standard" => DirectCreator
+    case "schools" => SchoolsCreator
+    case "countries" => CountriesCreator
+    case "fed-simple" => new FederalistCreator(simple=true)
+    case "fed-full" => new FederalistCreator(simple=false)
+  }
+}
+
 object DirectCreator extends PointCreator {
 
  def apply(filename: String) = Source.fromFile(filename).getLines.collect(_.split("\\s+").toList match {
@@ -73,7 +84,7 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
     val text = fedArticles.flatMap(_.get("text"))
     val fedId = fedArticles.flatMap(_.get("id"))
     val fedAuthor = fedArticles.flatMap(_.get("author"))
-    val fedText = extractFull(text)
+    val fedText = if(simple) extractSimple(text) else extractFull(text)
     (fedId,fedAuthor,fedText).zipped.toIterator
 
   }
@@ -94,8 +105,6 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
     val theCount = tokens.map(x => x.count(_ == "the")).map(_.toDouble)
     val peopleCount = tokens.map(x => x.count(_ == "people")).map(_.toDouble)
     val whichCount = tokens.map(x => x.count(_ == "which")).map(_.toDouble)
-    //val indSeq = IndexedSeq((theCount,peopleCount,whichCount).zipped).transpose
-    //println(indSeq.map(x => Point(x)))
    for( i <- 0 to theCount.length-1) yield Point(IndexedSeq(theCount(i),peopleCount(i),whichCount(i)))
   }
 
@@ -109,9 +118,7 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
    */
   def extractFull(texts: IndexedSeq[String]): IndexedSeq[Point] = {
     val tokens = texts.map(x => SimpleTokenizer(x.toLowerCase))
-    //println(tokens)
     val totalCount = tokens.map(x => x.count(_ != """([\?!()\";\|\[\].,'])""")).map(_.toDouble)
-    println(totalCount)
     val govCount = tokens.map(x => x.count(_ == "government")).map(_.toDouble)
     val stateCount = tokens.map(x => x.count(_ == "state")).map(_.toDouble)
     val congCount = tokens.map(x => x.count(_ == "congress")).map(_.toDouble)
@@ -119,7 +126,7 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
     val rel2 = stateCount.zip(totalCount).map(x => x._1 / x._2)
     val rel3 = congCount.zip(totalCount).map(x => x._1 / x._2)
     for( i <- 0 to 84) yield Point(IndexedSeq(rel1(i),rel2(i),rel3(i)))
-    for( i <- 0 to 84) yield Point(IndexedSeq(govCount(i),stateCount(i),congCount(i)))
+    //for( i <- 0 to 84) yield Point(IndexedSeq(govCount(i),stateCount(i),congCount(i)))
   }
 
 }
