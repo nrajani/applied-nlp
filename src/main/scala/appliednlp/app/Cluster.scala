@@ -26,8 +26,32 @@ import math.{sqrt,pow}
     // while you run the algorithm. 
     val logLevel = if (opts.verbose()) Level.DEBUG else Level.INFO
     Logger.getRootLogger.setLevel(logLevel)
-    
     // Your code starts here. You'll use and extend it during every problem.
+
+    val pointObject = PointCreator(opts.features())
+    val pointType = pointObject(opts.filename()).toList
+    val points = pointType.map(x => x._3).toIndexedSeq
+    val pointsTransformer = PointTransformer(opts.transform(),points)
+    val pointsTransformed = pointsTransformer(points)
+    val distance = DistanceFunction(opts.distance())
+    val kmeans = new Kmeans(pointsTransformed,distance,fixedSeedForRandom=true)
+    val (disp, centroidOut)= kmeans.run(k=opts.k())
+    val (dispersion, predictedMem) = kmeans.computeClusterMemberships(centroidOut)
+    val label = pointType.map(x =>x._2).toIndexedSeq
+    val id = pointType.map(x =>x._1).toIndexedSeq
+    
+    if (opts.showCentroids()) {
+      centroidOut.foreach(println)
+    }
+
+    if (opts.report()) {
+      ClusterReport(id, label, predictedMem)
+    }
+
+   println(ClusterConfusionMatrix(label, centroidOut.length, predictedMem))
+
+    
+
     // Part 1
     /*
     val pointObject = DirectCreator(opts.filename()).toList
@@ -70,7 +94,7 @@ import math.{sqrt,pow}
     val countryLabel = countryObject.map(x =>x._2).toIndexedSeq 
     val countryConfusionMatrix = ClusterConfusionMatrix(goldClusterIds= countryLabel, numPredictedClusters = countryOut._2.length, predictedClusterIndices = countryCentroidOut._2)
     println(countryConfusionMatrix)
-*/
+
     // Part 5
     val fedCreator = new FederalistCreator
     val fedObject = fedCreator(opts.filename()).toList
@@ -82,6 +106,7 @@ import math.{sqrt,pow}
     val fedConfusionMatrix = ClusterConfusionMatrix(goldClusterIds= fedLabel, numPredictedClusters = fedOut._2.length, predictedClusterIndices = fedCentroidOut._2)
     println(fedConfusionMatrix)
     //ClusterReport(fedObject.map(x => x._1).toSeq,fedLabel,fedCentroidOut._2)
+    */
   }
 
 }
