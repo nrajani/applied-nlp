@@ -6,6 +6,7 @@ import chalk.util.SimpleTokenizer
 
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
+import scala.io.Source
 
 /**
  *  Read data and produce data points and their features.
@@ -23,8 +24,10 @@ trait PointCreator extends (String => Iterator[(String,String,Point)])
  */
 object DirectCreator extends PointCreator {
 
- def apply(filename: String) = List[(String,String,Point)]().toIterator
-
+ def apply(filename: String) = Source.fromFile(filename).getLines.collect(_.split("\\s+").toList match {
+      case s1 :: s2 :: points => (s1, s2, Point(points.map(_.toDouble).toIndexedSeq))
+    })
+ //List[(String,String,Point)]().toIterator
 }
 
 
@@ -33,9 +36,14 @@ object DirectCreator extends PointCreator {
  * into a format suitable for input to RunKmeans.
  */
 object SchoolsCreator extends PointCreator {
-
-  def apply(filename: String) = List[(String,String,Point)]().toIterator
-
+  def apply(filename: String) = Source.fromFile(filename).getLines.flatMap(_.split("\\s+").toList match {
+      case s1 :: p1x :: p1y :: p2x :: p2y :: Nil => List( (s1,"4",Point(List(p1x,p1y).map(_.toDouble).toIndexedSeq)),
+          (s1,"6",Point(List(p2x,p2y).map(_.toDouble).toIndexedSeq)) )
+      case s1 :: s2 ::p1x :: p1y :: p2x :: p2y :: Nil => List( (s1+"_"+s2,"4",Point(List(p1x,p1y).map(_.toDouble).toIndexedSeq)),
+          (s1+"_"+s2,"6",Point(List(p2x,p2y).map(_.toDouble).toIndexedSeq)) )
+                                   // => (s1,"6",Point(points2.map(_.toDouble).toIndexedSeq))
+  //List[(String,String,Point)]().toIterator
+  })
 }
 
 /**
@@ -43,9 +51,12 @@ object SchoolsCreator extends PointCreator {
  * into a format suitable for input to RunKmeans.
  */
 object CountriesCreator extends PointCreator {
-
-  def apply(filename: String) = List[(String,String,Point)]().toIterator
-
+  def apply(filename: String) = Source.fromFile(filename).getLines.flatMap(_.split("\\s+").toList match {
+      case s1 :: p1x :: p1y :: Nil => List( (s1,"1",Point(List(p1x,p1y).map(_.toDouble).toIndexedSeq)))
+      case s1 :: s2 ::p1x :: p1y :: Nil => List( (s1+"_"+s2,"1",Point(List(p1x,p1y).map(_.toDouble).toIndexedSeq)))
+                                   // => (s1,"6",Point(points2.map(_.toDouble).toIndexedSeq))
+  //List[(String,String,Point)]().toIterator
+  })
 }
 
 /**
@@ -57,7 +68,16 @@ object CountriesCreator extends PointCreator {
  */
 class FederalistCreator(simple: Boolean = false) extends PointCreator {
 
-  def apply(filename: String) = List[(String,String,Point)]().toIterator
+  def apply(filename: String) = {
+    val fedArticles = FederalistArticleExtractor(filename)
+    val text = fedArticles.flatMap(_.get("text"))
+    val fedId = fedArticles.flatMap(_.get("id"))
+    val fedAuthor = fedArticles.flatMap(_.get("author"))
+    val fedText = extractFull(text)
+    (fedId,fedAuthor,fedText).zipped.toIterator
+
+  }
+  //List[(String,String,Point)]().toIterator
 
   /**
    * Given the text of an article, compute the frequency of "the", "people"
@@ -70,7 +90,13 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
    *              FederalistArticleExtractor).
    */
   def extractSimple(texts: IndexedSeq[String]): IndexedSeq[Point] = {
-    Vector[Point]()
+    val tokens = texts.map(x => SimpleTokenizer(x.toLowerCase))
+    val theCount = tokens.map(x => x.count(_ == "the")).map(_.toDouble)
+    val peopleCount = tokens.map(x => x.count(_ == "people")).map(_.toDouble)
+    val whichCount = tokens.map(x => x.count(_ == "which")).map(_.toDouble)
+    //val indSeq = IndexedSeq((theCount,peopleCount,whichCount).zipped).transpose
+    //println(indSeq.map(x => Point(x)))
+   for( i <- 0 to theCount.length-1) yield Point(IndexedSeq(theCount(i),peopleCount(i),whichCount(i)))
   }
 
   /**
@@ -82,7 +108,18 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
    *              FederalistArticleExtractor).
    */
   def extractFull(texts: IndexedSeq[String]): IndexedSeq[Point] = {
-    Vector[Point]()
+    val tokens = texts.map(x => SimpleTokenizer(x.toLowerCase))
+    //println(tokens)
+    val totalCount = tokens.map(x => x.count(_ != """([\?!()\";\|\[\].,'])""")).map(_.toDouble)
+    println(totalCount)
+    val govCount = tokens.map(x => x.count(_ == "government")).map(_.toDouble)
+    val stateCount = tokens.map(x => x.count(_ == "state")).map(_.toDouble)
+    val congCount = tokens.map(x => x.count(_ == "congress")).map(_.toDouble)
+    val rel1 = govCount.zip(totalCount).map(x => x._1 / x._2)
+    val rel2 = stateCount.zip(totalCount).map(x => x._1 / x._2)
+    val rel3 = congCount.zip(totalCount).map(x => x._1 / x._2)
+    for( i <- 0 to 84) yield Point(IndexedSeq(rel1(i),rel2(i),rel3(i)))
+    for( i <- 0 to 84) yield Point(IndexedSeq(govCount(i),stateCount(i),congCount(i)))
   }
 
 }
