@@ -3,10 +3,13 @@ package appliednlp.cluster
 import nak.cluster._
 import nak.util.CollectionUtil._
 import chalk.util.SimpleTokenizer
+import scala.collection.immutable
+import scala.collection.mutable
 
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import scala.io.Source
+import math.log
 
 /**
  *  Read data and produce data points and their features.
@@ -105,7 +108,7 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
     val theCount = tokens.map(x => x.count(_ == "the")).map(_.toDouble)
     val peopleCount = tokens.map(x => x.count(_ == "people")).map(_.toDouble)
     val whichCount = tokens.map(x => x.count(_ == "which")).map(_.toDouble)
-   for( i <- 0 to theCount.length-1) yield Point(IndexedSeq(theCount(i),peopleCount(i),whichCount(i)))
+   for( i <- 0 to 84) yield Point(IndexedSeq(theCount(i),peopleCount(i),whichCount(i)))
   }
 
   /**
@@ -116,18 +119,39 @@ class FederalistCreator(simple: Boolean = false) extends PointCreator {
    *              for an article (i.e. the "text" field produced by
    *              FederalistArticleExtractor).
    */
-  def extractFull(texts: IndexedSeq[String]): IndexedSeq[Point] = {
-    val tokens = texts.map(x => SimpleTokenizer(x.toLowerCase))
-    val totalCount = tokens.map(x => x.count(_ != """([\?!()\";\|\[\].,'])""")).map(_.toDouble)
-    val govCount = tokens.map(x => x.count(_ == "government")).map(_.toDouble)
-    val stateCount = tokens.map(x => x.count(_ == "state")).map(_.toDouble)
-    val congCount = tokens.map(x => x.count(_ == "congress")).map(_.toDouble)
-    val rel1 = govCount.zip(totalCount).map(x => x._1 / x._2)
-    val rel2 = stateCount.zip(totalCount).map(x => x._1 / x._2)
-    val rel3 = congCount.zip(totalCount).map(x => x._1 / x._2)
-    for( i <- 0 to 84) yield Point(IndexedSeq(rel1(i),rel2(i),rel3(i)))
-    //for( i <- 0 to 84) yield Point(IndexedSeq(govCount(i),stateCount(i),congCount(i)))
-  }
+
+   def extractFull(texts: IndexedSeq[String]): IndexedSeq[Point] = {
+    val functionWord = Source.fromFile("data/functionword.txt").getLines.toList
+    val nounList = List("government","state","congress")
+    val rawTokens = texts.flatMap(x => SimpleTokenizer(x.toLowerCase))
+    val filteredTokens = rawTokens.filter(functionWord.contains(_) == true)
+    val functionMap = mutable.Map[String, Int]().withDefaultValue(0)
+    filteredTokens.foreach { token => functionMap(token) += 1 }
+    functionMap.toMap
+    val maxWords = functionMap.toList.sortBy{_._2}.takeRight(5).map(_._1).toIndexedSeq
+    val idf = log(85/texts.count(_.contains("Macedon")))+1
+   // println(idf)
+    texts.map{ text => 
+    val tokens = SimpleTokenizer(text.toLowerCase)
+    val tf = tokens.count(_.contains("Macedon"))+1
+    val tf_idf = tf*idf
+    val totalCount =  tokens.filter(_ != """([\?!()\";\|\[\].,'])""").toList.distinct
+    val totalFreq = totalCount.length.toDouble
+    val functionCount = for( i <- 0 to maxWords.length-1) yield tokens.count(_ == maxWords(i))
+    val relativeFreq = functionCount.map(x => x/totalFreq)
+    val features = new immutable.VectorBuilder[Double]()
+    val maxPoints = functionCount.map(_.toDouble).toIndexedSeq
+    //println(maxPoints)
+    features ++= maxPoints
+    val wLength = tokens.filter(_ != """([\?!()\";\|\[\].,'])""").map(_.length)
+    val avgLength = wLength.sum.toDouble / wLength.length
+    features += avgLength
+    features += tf_idf
+    features ++= relativeFreq 
+    //println(features)
+    Point(features.result)
+      }
+    } 
 
 }
 
