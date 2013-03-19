@@ -1,47 +1,151 @@
 Applied-NLP, Homework 3 Answers
 
-Name: 
-EID:
+Name: Nazneen Rajani	
+EID: nnr259
 
-Link to applied-nlp fork: 
+Link to applied-nlp fork: https://github.com/princessofpersia/applied-nlp
 
 --------------------------------------------------------------------------------
 
 Problem 1
 
 Part (b): Provide the requested output.
+> run-main appliednlp.app.Cluster -f standard -k 3 -d e /home/nazneen/applied-nlp/data/cluster/generated/clusters_equal_variance.dat
+[info] Running appliednlp.app.Cluster -f standard -k 3 -d e /home/nazneen/applied-nlp/data/cluster/generated/clusters_equal_variance.dat
+--------------------------------------------------------------------------------
+Confusion matrix.
+Columns give predicted counts. Rows give gold counts.
+--------------------------------------------------------------------------------
+50	0	0	|	50	[1]
+0	0	30	|	30	[2]
+0	20	0	|	20	[3]
+-------------------------
+50	20	30
+[0]	[1]	[2]
 
+The same output is generated using manhattan distance, that is:
+run-main appliednlp.app.Cluster -f standard -k 3 -d m /home/nazneen/applied-nlp/data/cluster/generated/clusters_equal_variance.dat
 
 Problem 2
 
 * Provide th command line call and the output.
+> run-main appliednlp.app.Cluster -f standard -k 3 -d euclidean -t z /home/nazneen/applied-nlp/data/cluster/generated/clusters_bigger_x_variance.dat
+[info] Running appliednlp.app.Cluster -f standard -k 3 -d euclidean -t z /home/nazneen/applied-nlp/data/cluster/generated/clusters_bigger_x_variance.dat
+--------------------------------------------------------------------------------
+Confusion matrix.
+Columns give predicted counts. Rows give gold counts.
+--------------------------------------------------------------------------------
+0	46	4	|	50	[1]
+3	2	25	|	30	[2]
+17	0	3	|	20	[3]
+-------------------------
+20	48	32
+[0]	[1]	[2]
 
 
 Problem 3
 
 Part (a): Provide the clusters and any comments.
+Cluster Centroids:
+[3.5962962962962957,3.7629629629629626]
+[5.486956521739131,5.482608695652174]
 
+In 4th grade, the schools performed about average in Reading but below average in Math.
+In 6th grade, the performed very poorly and below average for both Reading and Math.
 
 Part (b): Discuss outliers.
 
+BRENNAN,CONTE,DAY and WINCHESTER are the outliers. This is mainly because their average performance in both 4th and 6th grades is very close, so it is difficult to classify them. Even a PCA transformation fails to classify which indicates that the points maybe either along a line very close to each other or in a small circle.
+
 
 Part (c): Your interpretation for output when k=4.
+Cluster Centroids:
+[5.45,5.47]
+[3.2777777777777777,3.4388888888888887]
+[7.1,6.3]
+[4.370588235294117,4.68235294117647]
+[Label: 4] <=> [Cluster: 1]
+Ids: BALDWIN	BARNARD	BRENNAN	CLINTON	CONTE	DAY	DWIGHT	EDWARDS	IVY	KIMBERLY	LINCOLN_BASSETT	PRINCE	SCRANTONSHERMAN	TRUMAN	WEST_HILLS	WINCHESTER	WOODWARD
+[Label: 4] <=> [Cluster: 0]
+Ids: EDGEWOOD	HOOKER
+[Label: 6] <=> [Cluster: 0]
+Ids: BARNARD	CLINTON	EDWARDS	HALE	LOVELL	ROSS	SHERMAN	WEST_HILLS
+[Label: 6] <=> [Cluster: 2]
+Ids: BEECHER	DAVIS	EDGEWOOD	HOOKER	WOODWARD
+[Label: 6] <=> [Cluster: 3]
+Ids: BALDWIN	BRENNAN	CONTE	DAY	DWIGHT	IVY	KIMBERLY	LINCOLN_BASSETT	PRINCE	SCRANTON	TRUMAN	WINCHESTER
+[Label: 4] <=> [Cluster: 3]
+Ids: BEECHER	DAVIS	HALE	LOVELL	ROSS
+--------------------------------------------------------------------------------
+Confusion matrix.
+Columns give predicted counts. Rows give gold counts.
+--------------------------------------------------------------------------------
+2	18	0	5	|	25	[4]
+8	0	5	12	|	25	[6]
+---------------------------------
+10	18	5	17
+[0]	[1]	[2]	[3]
 
+The above output indicates that the clusters are fairly distinct and majority of the points in each of 4th grade are close to each other and thus the dominant count of 18. 6th grade has some outliers although almost half of 6th grade points are classified correctly. It can be observed that 6th grade has very many outliers compared to 4th grade. Most of 4th grade outliers that are clustered in 3 are mainly due to their average close to 6th grade average and hence getting misclassified. 
 
 Problem 4
 
 * Describe what you found.
+When I keep fixed distance(euclidean) and without any transformation and vary k from 2 to 10, following observations can be made:
+1. There are two dominant clusters for initial values of k except for two outliers - Ghana and Ivory_Coast. These countries have very very high birthrate and high death rate. Costa_Rica is next higher after these but it differs with a rate > 5. Let us call this 'outlier cluster'.
+2. As k increases the dominant clusters break into smaller clusters while the above two countries occupy a separate cluster.
+3. At k=5, something very weird is observed, two more countries occupy the 'outlier cluster' but again at k=6 we have the original 'outlier cluster', one still dominant cluster and other smaller clusters.
+4. For k >= 7, the 'outlier cluster' with two countries remains but other clusters are broken down into very small number of countries each.For k=10, it can clearly be observed that countries in same clusters have similar sanitary, hygiene and medical facilities and hence similar birth and death rates.
 
+The performance of manhattan distance is very similar to euclidean. In my opinion, cosine distance does not perform well on this data because countries that differ a lot in birth and death rate might happen to lie along lines close to each other and hence they are clustered together. Adding more features can help overcome this problem.
+
+By varying k from 2 to 10 on fixed distance(euclidean) and using zScore tranformation, it can be observed that the 'outlier cluster' is preserved throughout and the clustering is very efficient in the sense even though the bigger clusters disintegrate as k increases, zScore transformation is able to retain most countries that are close to each other. The results are similar for manhattan distance. The cosine distance is not much affected by zScore transformation.
+
+PCA transformation has the same effect as ZScore on cosine and euclidean distances as k is varied. For Manhattan distance, when k is small zScore performs better but as k increases PCA performs better but both remain more or less same. 
 
 Problem 5
 
 * Describe result of using z-score transform on the simple features.
+> run-main appliednlp.app.Cluster -f fed-simple -k 4 -d e -t z /home/nazneen/applied-nlp/data/cluster/federalist/federalist.txt
+[info] Running appliednlp.app.Cluster -f fed-simple -k 4 -d e -t z /home/nazneen/applied-nlp/data/cluster/federalist/federalist.txt
+--------------------------------------------------------------------------------
+Confusion matrix.
+Columns give predicted counts. Rows give gold counts.
+--------------------------------------------------------------------------------
+2	0	9	40	|	51	[HAMILTON]
+0	0	1	2	|	3	[HAMILTON AND MADISON]
+0	1	0	4	|	5	[JAY]
+0	3	1	7	|	11	[HAMILTON OR MADISON]
+0	3	10	2	|	15	[MADISON]
+---------------------------------
+2	7	21	55
+[0]	[1]	[2]	[3]
 
+
+I think the result is better with zScore transformation. Considering the authors as true labels, it is observed that 40 of Hamilton articles are classified correctly using zScore transform as opposed to using the identity transformation which can only classify 30 of Hamilton articles correctly. For the other clusters, the performance of both with and without zScore transform is more or less the same. I think the main reason for this performance is that sine we are considering absolute counts of certain words in articles for classifying, the frequency of these words is roughly proportional to the length of articles and I guess using the zScore transform somewhat alleviates this problem of absolute counting.
 
 
 Problem 6
 
+My code is very messy, I am sorry about that. I was trying many things together.
+Initially I did what you had done -> consider words with relative count in corpus and document > 6 and obtained really good results.
+Some of the other features I tried were:
+1. I got a list of function words and got the count of each from the entire corpus. I then took the 5 most highly occuring fucntion words and got the count of each in all the articles. This gave me an indexed sequence of counts of each of the 5 words.
+2. Got average length of words in articles. This gave another feature.
+3. Total number of words in each article was yet another feature.
+4. Got tf_idf of words like "Macedon"
+5. Got relative frequency of some words I thought would make a difference like "government", "state", "congress"
+6. Tried bigrams of words but did not give very good results so I ommitted.
+Below I discuss each of the features and how they affected the results.
 
+->The count of function words alone did a real good job on classifying the documents. The PCA transformation however make the result slightly worse probably because not all points in the cluster are coherent and the cluster is spread out.
+->The average length of words does not change the result much and the output remains the same. The explanation would be that average word length is almost the same across all articles.
+->The total number of words in each article feature gives a very bad performance(I am not even sure if it should be a feature). The reason is obvious, I am taking absolute count of words in a document and so smaller articles will be associated with other smaller articles and not to articles of the same author. So I removed this feature.
+->The tf_idf of uncommon words rarely affects the performance, but the performance slightly improves using PCA. The main reason is that the frequency term is zero for most articles so tf_idf results in a zero. I added a 1 to both for smoothing (Not sure if this is right).
+->The relative frequency of "government", "state", "congress" when added to the feature list slightly improved the performance of kmeans. The output is able to identify most of Hamilton, Jay and Madison articles and it is only confused with multiple author attributions. The transformations do not affect the performance of the algorithm.
+->I tried bigram of frequently occuring pair of words but it did not give very good results.
+
+To conclude, adding many features is not a good idea, it is better to have less but important features. Also, PCA does not always improve the results, most of the times they remain same and at times the result become worse. The explanation is that PCA finds principal dimensions along which it projects the points, since the number of dimensions are reduced, at times the points lose some of their features.
 
 Problem 7
 
