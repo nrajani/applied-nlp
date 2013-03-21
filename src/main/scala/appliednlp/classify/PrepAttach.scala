@@ -112,9 +112,14 @@ class ExtendedFeatureExtractor(bitvectors: Map[String, BitVector])
     val basicFeatures = BasicFeatureExtractor(verb, noun, prep, prepObj)
 
     // Extract more features
-
+    val ext_features = 
+    List(
+      AttrVal("verb_stem",stemmer(verb))
+      //AttrVal("noun_stem",stemmer(noun)),
+      //AttrVal("prepObj_stem",stemmer(prepObj))
+      )
     // Return the features. You should of course add your features to basic ones.
-    basicFeatures
+   basicFeatures++ext_features
   }
 
 }
