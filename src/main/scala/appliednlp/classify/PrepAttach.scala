@@ -103,21 +103,70 @@ class ExtendedFeatureExtractor(bitvectors: Map[String, BitVector])
   extends FeatureExtractor {
 
   lazy val stemmer = new PorterStemmer
-
+ 
   override def apply(
     verb: String, noun: String, prep: String, prepObj: String): Iterable[AttrVal] = {
 
     // Use the basic feature extractor to get the basic features (no need to 
     // duplicate effort and specify it again).
     val basicFeatures = BasicFeatureExtractor(verb, noun, prep, prepObj)
-
+   // println(bitvectors)
     // Extract more features
-    val ext_features = 
+    val nounBitvector = new BitVector(bitvectors.getOrElse(noun,"0000000000").toString.split("").drop(1).map(_.toInt).toIndexedSeq)
+    val verbBitvector = new BitVector(bitvectors.getOrElse(verb,"0000000000").toString.split("").drop(1).map(_.toInt).toIndexedSeq)
+    val prepBitvector = new BitVector(bitvectors.getOrElse(prep,"0000000000").toString.split("").drop(1).map(_.toInt).toIndexedSeq)
+    val prepObjBitvector = new BitVector(bitvectors.getOrElse(prepObj,"0000000000").toString.split("").drop(1).map(_.toInt).toIndexedSeq)
+    val suffix = List("ative","esque","tion","sion","ship","ness","ment","less","ious","ical","ible","ence","ance","able","est","ous","ing","ize","ive","ity","ist","ism","ish","ise","ify","ful","dom","ate","acy","ty","or","ic","fy","ed","es","er","en","al","al","s","y")
+    val prefix = List("under","trans","super","inter","anti","sub","semi","over","fore","pre","non","mis","mid","dis","un","re","ir","in","in","im","im","il","en","em","de")
+    val noun_Vector = nounBitvector.keepTopBits(4)
+    val verb_Vector = verbBitvector.keepTopBits(4)
+    val prep_Vector = prepBitvector.keepTopBits(4)
+    val prepObj_Vector = prepObjBitvector.keepTopBits(4)
+    var ext_features = 
     List(
-      AttrVal("verb_stem",stemmer(verb))
-      //AttrVal("noun_stem",stemmer(noun)),
-      //AttrVal("prepObj_stem",stemmer(prepObj))
-      )
+      AttrVal("verb_stem",stemmer(verb)),
+      AttrVal("noun_stem",stemmer(noun)),
+      //AttrVal("NounVerb_vector",noun_Vector.toString+verb_Vector.toString),
+      AttrVal("PPO_vector",prep_Vector.toString+prepObj_Vector.toString)
+      );
+    if(verb.length<=5)
+      ext_features=ext_features++List(AttrVal("verb_length","short"))
+    else
+      ext_features=ext_features++List(AttrVal("verb_length","long"))
+    if (noun matches """[0-9]+([.,]?[0-9]+)*""")
+      ext_features=ext_features++List(AttrVal("noun_number","number"))
+    if (prepObj matches """[0-9]+([.,]?[0-9]+)*""")
+      ext_features=ext_features++List(AttrVal("prepObj_number","number"))
+    if (noun.exists(_.isUpper)){
+      if(noun matches """[A-Z]+([.]?[A-Z]*)*""")
+        ext_features=ext_features++List(AttrVal("noun_form","XX"))
+      else
+        ext_features=ext_features++List(AttrVal("noun_form","Xx"))
+      }
+    if (prepObj.exists(_.isUpper)){
+      if(prepObj matches """[A-Z]+([.]?[A-Z]*)*""")
+        ext_features=ext_features++List(AttrVal("prepObj_form","XX"))
+      else
+        ext_features=ext_features++List(AttrVal("prepObj_form","Xx"))
+      }
+    if((prep+prepObj).length<=10)
+      ext_features=ext_features++List(AttrVal("ppo_length","short"))
+    else
+      ext_features=ext_features++List(AttrVal("ppo_length","long"))
+    if (prepObj.contains("-"))
+      ext_features=ext_features++List(AttrVal("prepObj_hyphen","-"))
+    if (noun.contains("-"))
+      ext_features=ext_features++List(AttrVal("noun_hyphen","-")) 
+    for(word <- prefix){
+        if(noun.startsWith(word))
+          ext_features=ext_features++List(AttrVal("noun_prefix",word))
+    }
+    for(word <- suffix){
+        if(verb.endsWith(word))
+          ext_features=ext_features++List(AttrVal("verb_suffix",word))
+    }
+    ext_features=ext_features++List(AttrVal("verb_noun",verb+"+"+noun))
+    ext_features=ext_features++List(AttrVal("verb_prepObj",verb+"+"+prepObj))
     // Return the features. You should of course add your features to basic ones.
    basicFeatures++ext_features
   }
